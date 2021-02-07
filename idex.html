@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3d Model.js</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <script src="threeFiles/three.js"></script>
+    <script src="threeFiles/OBJLoader.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let container;
+        let camera, scene, renderer;
+
+        init();
+        animate();
+
+
+        function init() {
+            // canvas 
+            container = document.createElement('div');
+            document.body.appendChild(container);
+
+            // camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+            //camera.position.z = 600;
+            camera.position.y = 50;
+            camera.position.x = 100;
+
+            // scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+
+            const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 1);
+            camera.add(pointLight);
+            scene.add(camera);
+
+            // BASE OBJECT
+            // texture BASE
+            const textureLoaderBase = new THREE.TextureLoader();
+            const textureBase = textureLoaderBase.load('roble-blanco-americano.jpg');
+
+            // model loader BASE
+            let objectBase;
+            const loaderBase = new THREE.OBJLoader();
+            loaderBase.load('GALLETA BASE V2.obj', function (objBase) {
+                objectBase = objBase;
+
+                objectBase.traverse(function (child) {
+                    if (child.isMesh) child.material.map = textureBase;
+                });
+
+                //objectBase.position.y = - 100;
+                scene.add(objectBase);
+            }, onProgress, onError);
+
+            // TAPA OBJECT
+            // texture Tapa
+            const textureLoaderTapa = new THREE.TextureLoader();
+            const texture = textureLoaderTapa.load('roble-blanco-americano.jpg');
+
+            //model loader TAPA
+            let objectTapa;
+            const loaderTapa = new THREE.OBJLoader();
+            loaderTapa.load('GALLETA TAPA V1.obj', function (objBase) {
+                objectTapa = objBase;
+
+                objectTapa.traverse(function (child) {
+                    if (child.isMesh) child.material.map = texture;
+                });
+
+                //objectTapa.position.y = - 100;
+                scene.add(objectTapa);
+            }, onProgress, onError);
+
+
+            // renderer
+            renderer = new THREE.WebGLRenderer();
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableZoom = true;
+
+
+            // resize window
+            window.addEventListener('resize', onWindowResize);
+
+            // model
+            function onProgress(xhr) {
+                if (xhr.lengthComputable) {
+                    const percentComplete = xhr.loaded / xhr.total * 100;
+                    console.log('model ' + Math.round(percentComplete, 2) + '% downloaded');
+                }
+            }
+
+            function onError() { }
+        }
+
+
+
+
+        function onWindowResize() {
+            windowHalfX = window.innerWidth / 2;
+            windowHalfY = window.innerHeight / 2;
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+
+
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            render();
+        }
+
+        function render() {
+            camera.lookAt(scene.position);
+            renderer.render(scene, camera);
+        }
+
+    </script>
+
+
+</body>
+
+</html>
