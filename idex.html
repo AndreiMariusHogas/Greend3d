@@ -11,6 +11,7 @@
 <body>
     <div>
         <select class="colorSelector" name="colorSelector">
+            <option selected="selected" disabled="disabled">Elige un color:</option>
             <option value="0xf0161d">RED</option>
             <option value="0x1a99ed">BLUE</option>
             <option value="0xb0f573">GREEN</option>
@@ -19,8 +20,8 @@
     </div>
 
 
-    <script src="threeFiles/three.js"></script>
-    <script src="threeFiles/OBJLoader.js"></script>
+    <script src="https://threejs.org/build/three.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
 
@@ -41,127 +42,105 @@
             document.body.appendChild(container);
 
             // camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-            //camera.position.z = 600;
-            camera.position.y = 50;
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.y = 100;
             camera.position.x = 100;
 
-            // scene
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xffffff);
-
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-            scene.add(ambientLight);
-
             const pointLight = new THREE.PointLight(0xffffff, 1);
             pointLight.position.set(50, 50, 50);
             camera.add(pointLight);
 
+
+            // scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+            scene.add(ambientLight);
             scene.add(camera);
 
-
-            // CHAPA OBJECT
-            // texture CHAPA
-            //const textureLoaderBase = new THREE.TextureLoader();
-            //const textureBase = textureLoaderBase.load('granulado.jpg');
-
-            // model loader CHAPA
-            let objectChapa;
-            const loaderChapa = new THREE.OBJLoader();
-            loaderChapa.load('piezas/CHAPA.obj', function (objChapa) {
-                objectChapa = objChapa;
-
-                objectChapa.traverse(function (child) {
-                    if (child.isMesh) {
-                        // add color
-                        child.material.color.setHex(0x8b5ee6);
-                        // add texture
-                        //child.material.map = textureBase;
-                    }
-                });
-                objectChapa.position.y = 1;
-                objectChapa.rotation.x = -Math.PI / 2;
-                objectChapa.rotation.z = -0.25 * Math.PI;
-                console.log("Chapa", objectChapa.position)
-                scene.add(objectChapa);
-            }, onProgress, onError);
-
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
 
             // LOGO OBJECT
-            // model loader LOGO
-            const loaderLogo = new THREE.OBJLoader();
-            loaderLogo.load('piezas/GREENDED.obj', function (objLogo) {
-                objectLogo = objLogo;
-
-                objectLogo.traverse(function (child) {
-                    if (child.isMesh) {
-                        // add color
-                        child.material.color.setHex(0x262626);
-                        // add texture
-                        //child.material.map = textureBase;
-                    }
-                });
-                objectLogo.position.y = 1;
-                objectLogo.rotation.x = -Math.PI / 2;
-                objectLogo.rotation.z = (0.75 * Math.PI);
-                console.log("Logo", objectLogo.position)
-                scene.add(objectLogo);
-            }, onProgress, onError);
-
-
-
-            // BASE OBJECT
-            // model loader BASE
-            let objectBase;
-            const loaderBase = new THREE.OBJLoader();
-            loaderBase.load('piezas/GALLETA BASE V2.obj', function (objBase) {
-                objectBase = objBase;
-
-                objectBase.traverse(function (child) {
-                    if (child.isMesh) {
-                        // add color
-                        child.material.color.setHex(0x8b5ee6);
-                        // add texture
-                        //child.material.map = textureBase;
-                    }
-                });
-
-                //objectBase.position.y = - 100;
-                console.log("Base", objectBase.position)
-                scene.add(objectBase);
-            }, onProgress, onError);
+            var logo = {
+                path: 'piezas/GREENDED.obj',
+                color: 0x262626,
+                reference: '',
+                position: [0, 1.02, 0],
+                rotation: [-0.5, 0, 0.75]
+            };
+            loadModel(logo);
+            
+            // CHAPA 
+            var chapa = {
+                path: 'piezas/CHAPA.obj',
+                color: 0x8b5ee6,
+                reference: '',
+                position: [0, 1, 0],
+                rotation: [-0.5, 0, -0.25]
+            };
+            loadModel(chapa);
 
             // TAPA OBJECT
-            // model loader TAPA
-            let objectTapa;
-            const loaderTapa = new THREE.OBJLoader();
-            loaderTapa.load('piezas/GALLETA TAPA V1.obj', function (objBase) {
-                objectTapa = objBase;
+            var tapa = {
+                path: 'piezas/GALLETA TAPA V1.obj',
+                color: 0x262626,
+                reference: '',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0]
+            };
+            loadModel(tapa);
 
-                objectTapa.traverse(function (child) {
-                    if (child.isMesh) {
-                        child.material.color.setHex(0x262626);
-                    }
-                });
+            // BASE OBJECT
+            var base = {
+                path: 'piezas/GALLETA BASE V2.obj',
+                color: 0x8b5ee6,
+                reference: '',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0]
+            };
+            loadModel(base);
 
-                //objectTapa.position.y = - 100;
-                console.log("Tapa", objectTapa.position)
-                scene.add(objectTapa);
-            }, onProgress, onError);
+
+            function loadModel(model = null) {
+                const loader = new THREE.OBJLoader();
+                loader.load(model.path, function (obj) {
+                    // reference for future updates
+                    model.reference = obj;
+
+                    // color
+                    obj.traverse(function (child) {
+                        if (child.isMesh) {
+                            // add color
+                            child.material.color.setHex(model.color);
+                        }
+                    });
+
+                    // postion
+                    obj.position.x = model.position[0]
+                    obj.position.y = model.position[1];
+                    obj.position.z = model.position[2];
+
+                    // rotation
+                    obj.rotation.x = Math.PI * model.rotation[0];
+                    obj.rotation.y = Math.PI * model.rotation[1];
+                    obj.rotation.z = Math.PI * model.rotation[2];
+
+                    // load model
+                    scene.add(obj);
+                }, onProgress, onError);
+
+            };
 
             // update colors
             const selectElement = document.querySelector('.colorSelector');
-
             selectElement.addEventListener('change', (event) => {
-                objectTapa.traverse(function (child) {
+                chapa.reference.traverse(function (child) {
                     if (child.isMesh) {
                         child.material.color.setHex(event.target.value);
                     }
                 });
             });
-
-
-
 
             // renderer
             renderer = new THREE.WebGLRenderer();
@@ -172,7 +151,6 @@
             // controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableZoom = true;
-
 
             // resize window
             window.addEventListener('resize', onWindowResize);
@@ -188,9 +166,7 @@
             function onError() { }
         }
 
-
-
-
+        // window resize
         function onWindowResize() {
             windowHalfX = window.innerWidth / 2;
             windowHalfY = window.innerHeight / 2;
@@ -201,14 +177,14 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        // animation
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
-
-
             render();
         }
 
+        // render engine
         function render() {
             camera.lookAt(scene.position);
             renderer.render(scene, camera);
