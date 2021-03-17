@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3d Model.js</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div class="woo3dv-canvas-wrapper" style="width:100vh;height:100vh"></div>
+    <div>
+      <select class="colorSelector" name="colorSelector">
+        <option selected="selected" disabled="disabled">Elige un color:</option>
+        <option value="0xf0161d">RED</option>
+        <option value="0x1a99ed">BLUE</option>
+        <option value="0xb0f573">GREEN</option>
+        <option value="0x262626">BLACK</option>
+      </select>
+    </div>
+
+    <script src="https://threejs.org/build/three.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+      let container
+      let camera, scene, renderer
+
+      init()
+      animate()
+
+      let objectLogo
+
+      const addObject = setInterval(() => {
+        const isContainerAvailable = document.getElementById('woo3dv-viewer')
+        if (isContainerAvailable) {
+          isContainerAvailable.removeChild(
+            document.getElementById('woo3dv-model-controls')
+          )
+          isContainerAvailable.removeChild(
+            document.getElementById('woo3dv-popup1')
+          )
+          const innerContainer = document.getElementsByClassName(
+            'woo3dv-canvas-wrapper'
+          )[0]
+          innerContainer.removeChild(document.getElementById('woo3dv-cv'))
+
+          init()
+          clearInterval(addObject)
+        }
+      }, 100)
+
+      function init () {
+        // canvas
+        container = document.getElementsByClassName('woo3dv-canvas-wrapper')[0]
+        console.log(container.offsetWidth)
+        console.log(container.offsetHeight)
+        // document.body.appendChild(container)
+
+        // camera
+        camera = new THREE.PerspectiveCamera(
+          50,
+          container.offsetWidth / container.offsetHeight,
+          1,
+          10000
+        )
+        camera.position.y = 100
+        camera.position.x = 100
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2)
+        const pointLight = new THREE.PointLight(0xffffff, 1)
+        pointLight.position.set(50, 50, 50)
+        camera.add(pointLight)
+
+        // scene
+        scene = new THREE.Scene()
+        scene.background = new THREE.Color(0xffffff)
+        scene.add(ambientLight)
+        scene.add(camera)
+
+        const axesHelper = new THREE.AxesHelper(5)
+        scene.add(axesHelper)
+
+        // LOGO OBJECT
+        var logo = {
+          path: 'piezas/GREENDED.obj',
+          color: 0x262626,
+          reference: '',
+          position: [0, 1.02, 0],
+          rotation: [-0.5, 0, 0.75]
+        }
+        loadModel(logo)
+
+        // CHAPA
+        var chapa = {
+          path: 'piezas/CHAPA.obj',
+          color: 0x8b5ee6,
+          reference: '',
+          position: [0, 1, 0],
+          rotation: [-0.5, 0, -0.25]
+        }
+        loadModel(chapa)
+
+        // TAPA OBJECT
+        var tapa = {
+          path: 'piezas/GALLETA TAPA V1.obj',
+          color: 0x262626,
+          reference: '',
+          position: [0, 0, 0],
+          rotation: [0, 0, 0]
+        }
+        loadModel(tapa)
+
+        // BASE OBJECT
+        var base = {
+          path: 'piezas/GALLETA BASE V2.obj',
+          color: 0x8b5ee6,
+          reference: '',
+          position: [0, 0, 0],
+          rotation: [0, 0, 0]
+        }
+        loadModel(base)
+
+        function loadModel (model = null) {
+          const loader = new THREE.OBJLoader()
+          loader.load(
+            model.path,
+            function (obj) {
+              // reference for future updates
+              model.reference = obj
+
+              // color
+              obj.traverse(function (child) {
+                if (child.isMesh) {
+                  // add color
+                  child.material.color.setHex(model.color)
+                }
+              })
+
+              // postion
+              obj.position.x = model.position[0]
+              obj.position.y = model.position[1]
+              obj.position.z = model.position[2]
+
+              // rotation
+              obj.rotation.x = Math.PI * model.rotation[0]
+              obj.rotation.y = Math.PI * model.rotation[1]
+              obj.rotation.z = Math.PI * model.rotation[2]
+
+              // load model
+              scene.add(obj)
+            },
+            onProgress,
+            onError
+          )
+        }
+
+        // update colors
+        const selectElement = document.querySelector('.colorSelector')
+        selectElement.addEventListener('change', event => {
+          chapa.reference.traverse(function (child) {
+            if (child.isMesh) {
+              child.material.color.setHex(event.target.value)
+            }
+          })
+        })
+
+        // renderer
+        renderer = new THREE.WebGLRenderer()
+        renderer.setPixelRatio(window.devicePixelRatio)
+        renderer.setSize(container.offsetWidth, container.offsetHeight)
+        container.appendChild(renderer.domElement)
+
+        // controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement)
+        controls.enableZoom = true
+
+        // resize window
+        window.addEventListener('resize', onWindowResize)
+
+        // model
+        function onProgress (xhr) {
+          if (xhr.lengthComputable) {
+            const percentComplete = (xhr.loaded / xhr.total) * 100
+            console.log(
+              'model ' + Math.round(percentComplete, 2) + '% downloaded'
+            )
+          }
+        }
+
+        function onError () {}
+      }
+
+      // window resize
+      function onWindowResize () {
+        windowHalfX = container.offsetWidth / 2
+        windowHalfY = container.offsetHeight / 2
+
+        camera.aspect = container.offsetWidth / container.offsetHeight
+        camera.updateProjectionMatrix()
+
+        renderer.setSize(container.offsetWidth, container.offsetHeight)
+      }
+
+      // animation
+      function animate () {
+        requestAnimationFrame(animate)
+        controls.update()
+        render()
+      }
+
+      // render engine
+      function render () {
+        camera.lookAt(scene.position)
+        renderer.render(scene, camera)
+      }
+    </script>
+  </body>
+</html>
